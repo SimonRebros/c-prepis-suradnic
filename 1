@@ -1,0 +1,120 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConsoleApp5
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            string vstupnySubor = ("c:\\a\\input.x");
+            string vystupnySubor = ("c:\\a\\output.x");
+
+            List<float[]> vrcholy = NacitajVrcholy(vstupnySubor);
+
+            Console.WriteLine("Zadajte funkciu (posun/mierka):");
+            string funkcia = Console.ReadLine();
+
+            if (funkcia.ToLower() == "posun")
+            {
+                Console.WriteLine("Zadajte os (x, y, z):");
+                string os = Console.ReadLine();
+                Console.WriteLine("Zadajte hodnotu o koľko posunúť:");
+                float hodnota = float.Parse(Console.ReadLine(), CultureInfo.InvariantCulture);
+
+                Posun(vrcholy, os, hodnota);
+            }
+            else if (funkcia.ToLower() == "mierka")
+            {
+                Console.WriteLine("Zadajte hodnotu mierky:");
+                float mierka = float.Parse(Console.ReadLine(), CultureInfo.InvariantCulture);
+
+                ZmenMierku(vrcholy, mierka);
+            }
+            else
+            {
+                Console.WriteLine("Neznáma funkcia.");
+                return;
+            }
+
+            Console.WriteLine("Upravené vrcholy:");
+            foreach (var vrchol in vrcholy)
+            {
+                Console.WriteLine($"{vrchol[0]} {vrchol[1]} {vrchol[2]}");
+            }
+
+            UlozVrcholy(vystupnySubor, vrcholy);
+            Console.WriteLine($"Upravené vrcholy boli uložené do súboru {vystupnySubor}");
+        }
+
+        static List<float[]> NacitajVrcholy(string nazovSuboru)
+        {
+            List<float[]> vrcholy = new List<float[]>();
+            using (StreamReader citac = new StreamReader(nazovSuboru))
+            {
+                string riadok;
+                while ((riadok = citac.ReadLine()) != null)
+                {
+                    riadok = riadok.Trim();
+                    if (riadok.StartsWith("{") || riadok.StartsWith("}"))
+                        continue;
+
+                    string[] casti = riadok.Split(new[] { ' ', '\t', ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (casti.Length == 3)
+                    {
+                        float x = float.Parse(casti[0], CultureInfo.InvariantCulture);
+                        float y = float.Parse(casti[1], CultureInfo.InvariantCulture);
+                        float z = float.Parse(casti[2], CultureInfo.InvariantCulture);
+                        vrcholy.Add(new[] { x, y, z });
+                    }
+                }
+            }
+            return vrcholy;
+        }
+
+        static void Posun(List<float[]> vrcholy, string os, float hodnota)
+        {
+            int indexOsi;
+            switch (os.ToLower())
+            {
+                case "x": indexOsi = 0; break;
+                case "y": indexOsi = 1; break;
+                case "z": indexOsi = 2; break;
+                default: throw new ArgumentException("Neplatná os.");
+            }
+
+            foreach (var vrchol in vrcholy)
+            {
+                vrchol[indexOsi] += hodnota;
+            }
+        }
+
+        static void ZmenMierku(List<float[]> vrcholy, float mierka)
+        {
+            for (int i = 0; i < vrcholy.Count; i++)
+            {
+                vrcholy[i][0] *= mierka;
+                vrcholy[i][1] *= mierka;
+                vrcholy[i][2] *= mierka;
+            }
+        }
+
+        static void UlozVrcholy(string nazovSuboru, List<float[]> vrcholy)
+        {
+            using (StreamWriter zapisovac = new StreamWriter(nazovSuboru))
+            {
+                zapisovac.WriteLine("MeshNormals {");
+                foreach (var vrchol in vrcholy)
+                {
+                    zapisovac.WriteLine($"  {vrchol[0].ToString(CultureInfo.InvariantCulture)}; {vrchol[1].ToString(CultureInfo.InvariantCulture)}; {vrchol[2].ToString(CultureInfo.InvariantCulture)},");
+                }
+                zapisovac.WriteLine("}");
+            }
+        }
+    }
+}
